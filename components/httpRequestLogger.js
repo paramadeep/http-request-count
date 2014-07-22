@@ -3,24 +3,24 @@ var Cr = Components.results;
 
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 
-var HttpRequestCount = 0
 function HttpRequestLogger() {
   var httpRequestLogger =
   {
     observe: function(subject, topic, data) 
     {
       if (topic == "http-on-modify-request") {
-        HttpRequestCount = HttpRequestCount + 1;
         var httpChannel = subject.QueryInterface(Ci.nsIHttpChannel);
         var goodies = loadContextGoodies(httpChannel);
         if (goodies) {
-          var myDocument = goodies.contentWindow.document;
+          var myDocument = goodies.document;
           var element =  myDocument.getElementById('httpcount');
           if (element == null){
             element = myDocument.createElement("HttpRequestCount");
             element.setAttribute("id", "httpcount");
+            element.setAttribute("count",1);
+          } else {
+            element.setAttribute("count",(parseInt(element.getAttribute('count'))+1));
           }
-          element.setAttribute("count",HttpRequestCount);
           myDocument.documentElement.appendChild(element);
         } else {
           //dont do anything as there is no contentWindow associated with the httpChannel, liekly a google ad is loading or some ajax call or something, so this is not an error
@@ -53,22 +53,7 @@ function HttpRequestLogger() {
       if (!contentWindow) {
         return null;
       } else {
-        var aDOMWindow = contentWindow.top.QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsIWebNavigation)
-          .QueryInterface(Ci.nsIDocShellTreeItem)
-          .rootTreeItem
-          .QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsIDOMWindow);
-        var gBrowser = aDOMWindow.gBrowser;
-        var aTab = gBrowser._getTabForContentWindow(contentWindow.top); 
-        var browser = aTab.linkedBrowser;
-        return {
-          aDOMWindow: aDOMWindow,
-            gBrowser: gBrowser,
-            aTab: aTab,
-            browser: browser,
-            contentWindow: contentWindow
-        };
+        return contentWindow;
       }
     }
   }
