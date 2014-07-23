@@ -2,28 +2,27 @@ var Ci = Components.interfaces;
 var Cr = Components.results;
 
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
-
+var appWindow;
 function HttpRequestLogger() {
   var httpRequestLogger =
   {
     observe: function(subject, topic, data) 
     {
+      Components.utils.reportError(topic);
       if (topic == "http-on-modify-request") {
         var httpChannel = subject.QueryInterface(Ci.nsIHttpChannel);
-        var goodies = loadContextGoodies(httpChannel);
-        if (goodies) {
-          var myDocument = goodies.document;
-          var element =  myDocument.getElementById('httpcount');
-          if (element == null){
-            element = myDocument.createElement("HttpRequestCount");
-            element.setAttribute("id", "httpcount");
-            element.setAttribute("count",1);
-          } else {
-            element.setAttribute("count",(parseInt(element.getAttribute('count'))+1));
-          }
+        if(appWindow == null){
+          appWindow  = loadContextGoodies(httpChannel);
+        }
+        var myDocument = appWindow.document;
+        var element = myDocument.getElementById('httpcount');
+        if (element == null){
+          element = myDocument.createElement("HttpRequestCount");
+          element.setAttribute("id", "httpcount");
+          element.setAttribute("count",1);
           myDocument.documentElement.appendChild(element);
         } else {
-          //dont do anything as there is no contentWindow associated with the httpChannel, liekly a google ad is loading or some ajax call or something, so this is not an error
+          element.setAttribute("count",(parseInt(element.getAttribute('count'))+1));
         }
       }
     }
@@ -57,8 +56,6 @@ function HttpRequestLogger() {
       }
     }
   }
-
-
 }
 
 HttpRequestLogger.prototype.classID = Components.ID('{c4a9bb50-b9b2-11e0-a4dd-0800200c9a66}');
